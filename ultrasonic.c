@@ -119,14 +119,15 @@ void VendorRequests(void) {
             break;
         case PING_ULTRASONIC:
 			pin_write(ULTRASONIC_TX, DUTY_VAL);  // send the transmit pulse
+			timer_start(ULTRASONIC_TIMER);
 			timer_start(TOF_TIMER);
-			while(!timer_flag(TOF_TIMER)) {	// wait until the timer trips
-				if (timer_time(TOF_TIMER) >= timeout) { // timeout
+			while(!timer_flag(ULTRASONIC_TIMER)) {	// wait until the timer trips
+				if (timer_time(ULTRASONIC_TIMER) >= timeout) { // timeout
 					break;
 					}
 				}
 			TOF_VAL = timer_time(TOF_TIMER);
-            timer_lower(TOF_TIMER);
+            timer_lower(ULTRASONIC_TIMER);
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
