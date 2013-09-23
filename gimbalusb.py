@@ -6,6 +6,7 @@ class gimbalusb:
         self.SET_VALS = 1
         self.GET_VALS = 2
         self.PRINT_VALS = 3
+        self.PING_ULTRASONIC = 4
         self.dev = usb.core.find(idVendor = 0x6666, idProduct = 0x0003)
         if self.dev is None:
             raise ValueError('no USB device found matching idVendor = 0x6666 and idProduct = 0x0003')
@@ -17,7 +18,7 @@ class gimbalusb:
     def set_vals(self, val1, val2):
         try:
             self.dev.ctrl_transfer(0x40, self.SET_VALS, int(val1), int(val2))
-        except usb.core.USBError:5
+        except usb.core.USBError:
             print "Could not send SET_VALS vendor request."
 
     def get_vals(self):
@@ -36,6 +37,6 @@ class gimbalusb:
 
     def ping_ultrasonic(self):
         try:
-            self.dev.ctrl_transfer(0x40, self.PINT_ULTRASONIC)
+            self.dev.ctrl_transfer(0x40, self.PING_ULTRASONIC)
         except usb.core.USBError:
             print "Could not send PRINT_VALS vendor request."

@@ -17,7 +17,7 @@ list = Builder(action = 'xc16-objdump -S -D $SOURCE > $TARGET',
                src_suffix = 'elf')
 env.Append(BUILDERS = {'List' : list})
 
-env.Program('gimble_control', ['gimble_control.c',
+env.Program('ultrasonic', ['ultrasonic.c',
                       'descriptors.c', 
                       'usb.c', 
                       '../lib/uart.c',
@@ -25,5 +25,5 @@ env.Program('gimble_control', ['gimble_control.c',
                       '../lib/ui.c',
                       '../lib/pin.c',
                       '../lib/oc.c'])
-env.Hex('gimble_control')
-env.List('gimble_control')
+env.Hex('ultrasonic')
+env.List('ultrasonic')

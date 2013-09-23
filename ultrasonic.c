@@ -1,8 +1,8 @@
 /*
-	Elecanisms Mini-Project II using a PIC18F
+	Elecanisms Mini-Project III using a PIC18F
 	
 	Shivam Desai and Asa Eckert-Erdheim
-	September 21st, 2013
+	September 23, 2013
 	
 	Questions? 		   [Shivam@students.olin.edu; Asa@students.olin.edu]
 */
@@ -24,9 +24,10 @@
 #include <stdio.h>
 
 // Define vendor requests
-#define SET_VALS    1   // Vendor request that receives 2 unsigned integer values
-#define GET_VALS    2   // Vendor request that returns  2 unsigned integer values
-#define PRINT_VALS  3   // Vendor request that prints   2 unsigned integer values 
+#define SET_VALS            1   // Vendor request that receives 2 unsigned integer values
+#define GET_VALS            2   // Vendor request that returns  2 unsigned integer values
+#define PRINT_VALS          3   // Vendor request that prints   2 unsigned integer values 
+#define PING_ULTRASONIC     4   // Vendor request that activates the ultrason prints 1 unsigned value
 
 // Define names for pins
 #define SERVO_PAN  &D[0] // servo pin
@@ -44,8 +45,10 @@
 
 void initChip(void);
 
-uint16_t PAN_VAL;
-uint16_t TILT_VAL;
+uint16_t PAN_VAL = 0;
+uint16_t TILT_VAL = 0;
+
+uint16_t LED_VAL = 0;
 
 /*************************************************
 			Initialize the PIC
@@ -97,6 +100,11 @@ void VendorRequests(void) {
             BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
+        case PING_ULTRASONIC:
+            LED_VAL = 1 - LED_VAL;
+            BD[EP0IN].bytecount = 0;    // set EP0 IN byte count to 0
+            BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+            break;
         default:
             USB_error_flags |= 0x01;    // set Request Error Flag
     }
@@ -123,14 +131,11 @@ void VendorRequestsOut(void) {
 int16_t main(void) {
 	
 	initChip();
-
-    PAN_VAL  = 0;
-    TILT_VAL = 0;
-
     InitUSB();                      // initialize the USB registers and serial interface engine
 
     led_on(&led1);					// initial state for BLINKY LIGHT
     led_on(&led2);					// initial state for BLINKY LIGHT
+    led_on(&led3);                  // initial state for BLINKY LIGHT
     timer_setPeriod(&timer1, 1);	// timer for BLINKY LIGHT
     timer_start(&timer1);
     timer_setPeriod(&timer2, 1);	// timer for BLINKY LIGHT
@@ -154,6 +159,13 @@ int16_t main(void) {
         if (timer_flag(&timer2)) {	// when the timer trips
             timer_lower(&timer2);
             led_toggle(&led2);		// toggle the BLINKY LIGHT
+        }
+
+        if (LED_VAL == 1) {
+            led_on(&led3);
+        }
+        if (LED_VAL == 0) {
+            led_off(&led3);
         }
         
         pin_write(SERVO_PAN,  PAN_VAL);  // control SERVO_PAN  with LEFT/RIGHT KEYS

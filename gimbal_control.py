@@ -27,8 +27,14 @@ for pan_ind in range(NUM_STEPS):
         # Send command to board over USB
         gusb.set_vals(PAN_VAL, TILT_VAL)
 
+        gusb.ping_ultrasonic()
+
         # Wait briefly
-        t.sleep(.1)
+        t.sleep(0.5)
+
+        gusb.ping_ultrasonic()
+
+        t.sleep(0.5)
 
     PAN_VAL += INC_VAL
 
