@@ -1,1 +1,6 @@
 *.pyc
+*.o
+*.hex
+*.lst
+*.elf
+*.dblite
