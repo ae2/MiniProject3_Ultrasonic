@@ -9,37 +9,35 @@ MIN_VAL = 0
 NUM_STEPS = 25
 INC_VAL = int(MAX_VAL/NUM_STEPS) 
 
-# Initialize servo position
-PAN_VAL = 0
-TILT_VAL = 0
-
 # Create list of distances for calibration (cm)
 dists = [10, 20, 30, 40, 50]
 
 def main():
 
-    # Initialize instance of usb device
+    # Initialize servo position
+    PAN = 0
+    TILT = 0
+
     gusb = gimbalusb.gimbalusb()
 
-    # Initialize storage array
     arr = np.zeros([NUM_STEPS, NUM_STEPS, 3])
 
-    speed = calibrate(dists)
+    # speed = calibrate(dists)
 
     for pan_ind in range(NUM_STEPS):
         for tilt_ind in range(NUM_STEPS):
             # Send command to board over USB
-            gusb.set_vals(PAN_VAL, TILT_VAL)
+            gusb.set_vals(PAN, TILT)
 
             t = gusb.ping_ultrasonic()
             # d = calc_dist(t, speed)
             d = 555
 
-            arr[pan_ind,tilt_ind] = [PAN_VAL, TILT_VAL, d]
+            arr[pan_ind,tilt_ind] = [PAN, TILT, d]
 
-            TILT_VAL += INC_VAL
+            TILT += 1
 
-        PAN_VAL += INC_VAL
+        PAN += 1
 
 
 def calc_dist(t,speed):
@@ -47,7 +45,7 @@ def calc_dist(t,speed):
 
 def calibrate(dists):
 
-    arr = np.zeros([dists.size,3])
+    arr = np.zeros([len(dists),3])
     i = 0
 
     for dist in dists:
@@ -58,5 +56,6 @@ def calibrate(dists):
 
     return np.average(arr[:,2])
 
-main()
+if __name__ == '__main__':
+    main()
 
