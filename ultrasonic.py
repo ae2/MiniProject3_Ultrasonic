@@ -1,0 +1,62 @@
+import gimbalusb
+import time as t
+import numpy as np
+
+# Set parameters for servo commands
+MAX_VAL = 2**16 - 1 # 16 bit unsigned int
+MIN_VAL = 0
+
+NUM_STEPS = 25
+INC_VAL = int(MAX_VAL/NUM_STEPS) 
+
+# Initialize servo position
+PAN_VAL = 0
+TILT_VAL = 0
+
+# Create list of distances for calibration (cm)
+dists = [10, 20, 30, 40, 50]
+
+def main():
+
+    # Initialize instance of usb device
+    gusb = gimbalusb.gimbalusb()
+
+    # Initialize storage array
+    arr = np.zeros([NUM_STEPS, NUM_STEPS, 3])
+
+    speed = calibrate(dists)
+
+    for pan_ind in range(NUM_STEPS):
+        for tilt_ind in range(NUM_STEPS):
+            # Send command to board over USB
+            gusb.set_vals(PAN_VAL, TILT_VAL)
+
+            t = gusb.ping_ultrasonic()
+            # d = calc_dist(t, speed)
+            d = 555
+
+            arr[pan_ind,tilt_ind] = [PAN_VAL, TILT_VAL, d]
+
+            TILT_VAL += INC_VAL
+
+        PAN_VAL += INC_VAL
+
+
+def calc_dist(t,speed):
+    return t * speed
+
+def calibrate(dists):
+
+    arr = np.zeros([dists.size,3])
+    i = 0
+
+    for dist in dists:
+        res = raw_input("Place sensor %d cm from wall and press ENTER" %dist)
+        t = gusb.ping_ultrasonic()
+        arr[i,:] = [dist,t, dist/t]
+        i += 1
+
+    return np.average(arr[:,2])
+
+main()
+
