@@ -62,7 +62,7 @@ uint16_t TILT_VAL = 0;
 
 uint16_t LED_VAL  = 0;
 
-uint16_t DUTY_VAL = 65536; // 100% duty cycle
+uint16_t DUTY_VAL = 65536/2; // 100% duty cycle
 
 uint16_t TOF_VAL = 0;
 
@@ -88,7 +88,7 @@ void initChip(){
 
     oc_servo(&oc1, SERVO_PAN,     PAN_TIMER, 		interval, min_width, max_width, pos); // configure servo control
 	oc_servo(&oc2, SERVO_TILT,    TILT_TIMER, 		interval, min_width, max_width, pos); // configure servo control
-	oc_pwm  (&oc3, ULTRASONIC_TX, ULTRASONIC_TIMER, freq,	 duty_init);				 // configure ultrasonic transmission pulse
+	oc_pwm  (&oc3, ULTRASONIC_TX, NULL, freq,	 duty_init);				 // configure ultrasonic transmission pulse
 
 }
 
@@ -195,7 +195,7 @@ int16_t main(void) {
     timer_setPeriod(BLINKY_TIMER, 1);	// timer for BLINKY LIGHT
     timer_start(BLINKY_TIMER);
 
-    timer_setPeriod(ULTRASONIC_TIMER, 5e-4);	// timer for transmission at 500 microseconds
+    timer_setPeriod(ULTRASONIC_TIMER, 5e-3);	// timer for transmission at 500 microseconds
 
     while (USB_USWSTAT!=CONFIG_STATE) {     // while the peripheral is not configured...
         

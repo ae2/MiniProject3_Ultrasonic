@@ -41,7 +41,7 @@ def main():
 
     while 1:
         temp = gusb.ping_ultrasonic()
-        t.sleep(1)
+        t.sleep(0.25)
 
 
 def calc_dist(t,speed):
