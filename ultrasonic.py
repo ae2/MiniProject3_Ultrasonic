@@ -24,20 +24,24 @@ def main():
 
     # speed = calibrate(dists)
 
-    for pan_ind in range(NUM_STEPS):
-        for tilt_ind in range(NUM_STEPS):
-            # Send command to board over USB
-            gusb.set_vals(PAN, TILT)
+    # for pan_ind in range(NUM_STEPS):
+    #     for tilt_ind in range(NUM_STEPS):
+    #         # Send command to board over USB
+    #         gusb.set_vals(PAN, TILT)
 
-            t = gusb.ping_ultrasonic()
-            # d = calc_dist(t, speed)
-            d = 555
+    #         t = gusb.ping_ultrasonic()
+    #         # d = calc_dist(t, speed)
+    #         d = 555
 
-            arr[pan_ind,tilt_ind] = [PAN, TILT, d]
+    #         arr[pan_ind,tilt_ind] = [PAN, TILT, d]
 
-            TILT += 1
+    #         TILT += 1
 
-        PAN += 1
+    #     PAN += 1
+
+    while 1:
+        temp = gusb.ping_ultrasonic()
+        t.sleep(1)
 
 
 def calc_dist(t,speed):
