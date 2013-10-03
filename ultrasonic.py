@@ -147,6 +147,13 @@ def mapServo2Ang(servo_val,total_ang):
     # Convert servo command to angle of servo
     return servo_val / 2.0**16 * total_ang
 
+def ping_const():
+    gusb = gimbalusb.gimbalusb()
+
+    while 1:
+        dist = gusb.ping_ultrasonic()
+        t.sleep(0.25)
+
 if __name__ == '__main__':
     main()
-
+    # ping_const()
