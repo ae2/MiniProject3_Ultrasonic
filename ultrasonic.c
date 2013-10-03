@@ -195,7 +195,7 @@ int16_t main(void) {
     timer_setPeriod(BLINKY_TIMER, 1);	// timer for BLINKY LIGHT
     timer_start(BLINKY_TIMER);
 
-    timer_setPeriod(ULTRASONIC_TIMER, 5e-3);	// timer for transmission at 500 microseconds
+    timer_setPeriod(ULTRASONIC_TIMER, 5e-4);	// timer for transmission at 500 microseconds
 
     while (USB_USWSTAT!=CONFIG_STATE) {     // while the peripheral is not configured...
         
