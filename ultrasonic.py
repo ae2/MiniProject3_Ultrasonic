@@ -11,7 +11,7 @@ from random import randint
 MAX_VAL = 2**16 - 1 # 16 bit unsigned int
 MIN_VAL = 0
 
-NUM_STEPS = 5
+NUM_STEPS = 25
 INC_VAL = int(MAX_VAL/NUM_STEPS)
 
 # Range of motion of servos (deg)
@@ -32,7 +32,7 @@ def main():
     TILT = 0
 
     # Initialize gimbal usb object
-    # gusb = gimbalusb.gimbalusb()
+    gusb = gimbalusb.gimbalusb()
 
     # Start servos at 0 position
     # gusb.set_vals(PAN, TILT)
@@ -61,8 +61,8 @@ def main():
     ax.set_zlabel('Z')
 
     #Open Plot with Animation Enabled
-    plt.ion()
-    plt.show()
+    # plt.ion()
+    # plt.show()
 
     # Iterate each servo position
     for pan_ind in range(NUM_STEPS):
@@ -72,7 +72,9 @@ def main():
             # gusb.set_vals(PAN, TILT)
 
             # Send ping, measure TOF
-            # tof = gusb.ping_ultrasonic()
+            tof = gusb.ping_ultrasonic()
+
+            print tof
 
             # Use calibrated speed to find dist to object
             # dist = calc_dist(tof, speed)
@@ -85,8 +87,8 @@ def main():
             # Store cartestion positions
             arr[pan_ind,tilt_ind] = [x, y, z]
 
-            ax.scatter(x, y, z)
-            plt.draw()
+            # ax.scatter(x, y, z)
+            # plt.draw()
 
             # Increment tilt value
             TILT += INC_VAL
