@@ -49,7 +49,8 @@
 #define pos			0
 #define freq		40000
 #define duty_init	0
-#define timeout		2 		// seconds
+#define timeout		1 		// seconds
+#define pulse_time  5e-4
 
 /***************************************************** 
 		Function Prototypes & Variables
@@ -64,9 +65,12 @@ uint16_t LED_VAL  = 0;
 
 uint16_t DUTY_VAL = 65536/2; // 100% duty cycle
 
+uint16_t PULSE_TICK_COUNT = 0;
+
 uint16_t TOF_VAL = 0;
 
 uint16_t TIMEOUT_FLAG = 0;
+
 
 /*************************************************
 			Initialize the PIC
@@ -122,41 +126,45 @@ void VendorRequests(void) {
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
         case PING_ULTRASONIC:
+            // FIX ME: Set a good period for TOF_TIMER such that it doesn't overflow
+            timer_setPeriod(TOF_TIMER, pulse_time * 10);
 			pin_write(ULTRASONIC_TX, DUTY_VAL);  // send the transmit pulse
 			timer_start(ULTRASONIC_TIMER);
 			timer_start(TOF_TIMER);
-			while(!timer_flag(ULTRASONIC_TIMER)) {	// wait until the timer trips
-				// if (timer_time(ULTRASONIC_TIMER) >= timeout) { // timeout
-				// 	break;
-				// 	}
-			}
+			while(!timer_flag(ULTRASONIC_TIMER)) {}	// wait until the timer trips
+
             timer_lower(ULTRASONIC_TIMER);
             pin_write(ULTRASONIC_TX, 0);
 
-            // while(!timer_flag(ULTRASONIC_TIMER)) {  // wait until the timer trips
-            //     // Wait for another pulse width before looking for the return signal.
-            //     // This is to eliminate RX readings directly from TX
-            // }
+            PULSE_TICK_COUNT = timer_read(TOF_TIMER);
 
-            // while(!pin_read(ULTRASONIC_RX)) { // Wait for RX pin to go high
-            //     if (timer_time(TOF_TIMER) >= timeout) { //check for timeout of RX signal
-            //         TIMEOUT_FLAG = 1;
-            //         break;
-            //     }
-            // }
+            while(timer_read(TOF_TIMER) < (5 * PULSE_TICK_COUNT)) {  // wait until the timer trips
+                // Wait for another pulse width before looking for the return signal.
+                // This is to eliminate RX readings directly from TX
+            }
 
-            // if (TIMEOUT_FLAG == 1) {
-            //     TOF_VAL = 555;
-            // }
-            // else {
-            //     TOF_VAL = timer_time(TOF_TIMER);
-            // }
+            // TOF_VAL = timer_read(TOF_TIMER);
 
-            // TIMEOUT_FLAG = 0;
-            // timer_lower(TOF_TIMER);
+            while(!pin_read(ULTRASONIC_RX)) { // Wait for RX pin to go high
+                if (timer_time(TOF_TIMER) >= timeout) { //check for timeout of RX signal
+                    TIMEOUT_FLAG = 1;
+                    break;
+                }
+            }
 
-            // temp.w = TOF_VAL;
-            temp.w = 555;
+            if (TIMEOUT_FLAG == 1) {
+                TOF_VAL = 1;
+            }
+            else {
+                TOF_VAL = timer_read(TOF_TIMER);
+            }
+
+            TIMEOUT_FLAG = 0;
+            timer_stop(TOF_TIMER);
+
+            temp.w = TOF_VAL;
+            TOF_VAL = 0;
+            // temp.w = 555;
             BD[EP0IN].address[0] = temp.b[0];
             BD[EP0IN].address[1] = temp.b[1];
 
@@ -195,7 +203,7 @@ int16_t main(void) {
     timer_setPeriod(BLINKY_TIMER, 1);	// timer for BLINKY LIGHT
     timer_start(BLINKY_TIMER);
 
-    timer_setPeriod(ULTRASONIC_TIMER, 5e-4);	// timer for transmission at 500 microseconds
+    timer_setPeriod(ULTRASONIC_TIMER, pulse_time);	// timer for transmission at 500 microseconds
 
     while (USB_USWSTAT!=CONFIG_STATE) {     // while the peripheral is not configured...
         
