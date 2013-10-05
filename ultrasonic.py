@@ -11,7 +11,7 @@ import msvcrt as ms
 MAX_VAL = 2**16 - 1 # 16 bit unsigned int
 MIN_VAL = 0
 
-NUM_STEPS = 25
+NUM_STEPS = 10
 INC_VAL = int(MAX_VAL/NUM_STEPS)
 
 # Range of motion of servos (deg)
@@ -19,8 +19,11 @@ PAN_RANGE = 180
 TILT_RANGE = 180
 
 # Set constant axis limits for plot
-PLOT_MIN = 0
-PLOT_MAX = 200
+PLOT_MIN_XY = -200 
+PLOT_MAX_XY = 200
+
+PLOT_MIN_Z = 0 
+PLOT_MAX_Z = 200
 
 # Create list of distances for calibration (cm)
 dists = np.logspace(np.log10(30.0), np.log10(200.0), 15)
@@ -56,9 +59,9 @@ def main():
     ax = fig.add_subplot(111, projection='3d')
 
     #Set Axis Limits Here 
-    ax.set_xlim3d(PLOT_MIN - (PLOT_MAX-PLOT_MIN)/2, PLOT_MIN + (PLOT_MAX-PLOT_MIN)/2)
-    ax.set_ylim3d(PLOT_MIN, PLOT_MAX)   
-    ax.set_zlim3d(PLOT_MIN, PLOT_MAX)  
+    ax.set_xlim3d(PLOT_MIN_XY, PLOT_MAX_XY)
+    ax.set_ylim3d(PLOT_MIN_XY, PLOT_MAX_XY)   
+    ax.set_zlim3d(PLOT_MIN_Z, PLOT_MAX_Z)  
 
     ax.autoscale(False)               
         
@@ -90,6 +93,7 @@ def main():
 
                 # Use calibrated speed to find dist to object
                 dist = calc_dist(tof, speed)
+                # dist = 100
 
                 # Convert spherical coordinates to cartesian
                 [x, y, z] = sphr2cart(PAN, TILT, dist)
@@ -111,6 +115,12 @@ def main():
 
         # Increment pan value
         PAN += INC_VAL
+
+    print  arr
+
+    fig.set_size_inches(18.2,10, dpi=100)
+    plt.savefig('point_cloud.pdf')
+    plt.savefig('point_cloud.png')
 
     raw_input("Press any key to close plot and exit")
 
@@ -163,6 +173,8 @@ def sphr2cart(pan, tilt, dist):
     theta = np.deg2rad(mapServo2Ang(pan,PAN_RANGE))
     phi = np.deg2rad(mapServo2Ang(tilt,TILT_RANGE))
 
+    # print "Theta = %f, Phi = %f" %(theta * 180/3.14159, phi * 180/3.14159)
+
     # print theta, phi
 
     # Convert spherical coordinates to cartesian
@@ -173,6 +185,8 @@ def sphr2cart(pan, tilt, dist):
     x = dist * np.cos(theta) * np.cos(phi)
     y = dist * np.sin(theta) * np.cos(phi)
     z = dist * np.sin(phi)
+
+    print y
 
     return x, y, z
 
@@ -185,7 +199,10 @@ def ping_const():
     gusb = gimbalusb.gimbalusb()
 
     while 1:
-        dist = gusb.ping_ultrasonic()
+        [tof_count, overflow] = gusb.ping_ultrasonic()
+        tof = tof_count + overflow * 2**16
+        print "TOF = %d" %tof
+
         t.sleep(0.25)
 
 if __name__ == '__main__':

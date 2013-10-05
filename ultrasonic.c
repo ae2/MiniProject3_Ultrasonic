@@ -44,8 +44,8 @@
 
 // Define constants
 #define interval	20e-3
-#define min_width	0.8e-3
-#define max_width	2.2e-3
+#define min_width	0.6e-3
+#define max_width	2.4e-3
 #define pos			0
 #define freq		40000
 #define duty_init	0
