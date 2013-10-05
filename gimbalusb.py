@@ -37,8 +37,8 @@ class gimbalusb:
 
     def ping_ultrasonic(self):
         try:
-            ret = self.dev.ctrl_transfer(0xC0, self.PING_ULTRASONIC, 0, 0, 2)
+            ret = self.dev.ctrl_transfer(0xC0, self.PING_ULTRASONIC, 0, 0, 4)
         except usb.core.USBError:
             print "Could not send PRINT_VALS vendor request."
         else:
-            return int(ret[0])+int(ret[1])*256
+            return [int(ret[0])+int(ret[1])*256, int(ret[2])+int(ret[3])*256]
