@@ -66,6 +66,7 @@ uint16_t LED_VAL  = 0;
 uint16_t DUTY_VAL = 65536/2; // 100% duty cycle
 
 uint16_t PULSE_TICK_COUNT = 0;
+uint16_t OVERFLOW_COUNT = 0;
 
 uint16_t TOF_VAL = 0;
 
@@ -126,8 +127,6 @@ void VendorRequests(void) {
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
             break;
         case PING_ULTRASONIC:
-            // FIX ME: Set a good period for TOF_TIMER such that it doesn't overflow
-            timer_setPeriod(TOF_TIMER, pulse_time * 10);
 			pin_write(ULTRASONIC_TX, DUTY_VAL);  // send the transmit pulse
 			timer_start(ULTRASONIC_TIMER);
 			timer_start(TOF_TIMER);
@@ -138,17 +137,20 @@ void VendorRequests(void) {
 
             PULSE_TICK_COUNT = timer_read(TOF_TIMER);
 
-            while(timer_read(TOF_TIMER) < (5 * PULSE_TICK_COUNT)) {  // wait until the timer trips
-                // Wait for another pulse width before looking for the return signal.
+            while(timer_read(TOF_TIMER) < (4 * PULSE_TICK_COUNT)) {
+                // Wait for another 4 pulse widths before looking for the return signal.
                 // This is to eliminate RX readings directly from TX
             }
 
-            // TOF_VAL = timer_read(TOF_TIMER);
-
             while(!pin_read(ULTRASONIC_RX)) { // Wait for RX pin to go high
-                if (timer_time(TOF_TIMER) >= timeout) { //check for timeout of RX signal
+                if (OVERFLOW_COUNT >= 20) { //check for timeout of RX signal
                     TIMEOUT_FLAG = 1;
+                    TOF_VAL = 2;
                     break;
+                }
+                if (timer_flag(TOF_TIMER)) { // Keep track of the number of overflows of TOF_TIMER
+                    OVERFLOW_COUNT ++;
+                    timer_lower(TOF_TIMER);
                 }
             }
 
@@ -159,17 +161,23 @@ void VendorRequests(void) {
                 TOF_VAL = timer_read(TOF_TIMER);
             }
 
-            TIMEOUT_FLAG = 0;
             timer_stop(TOF_TIMER);
 
             temp.w = TOF_VAL;
-            TOF_VAL = 0;
-            // temp.w = 555;
             BD[EP0IN].address[0] = temp.b[0];
             BD[EP0IN].address[1] = temp.b[1];
 
-            BD[EP0IN].bytecount = 2;    // set EP0 IN byte count to 2
+            temp.w = OVERFLOW_COUNT;
+            BD[EP0IN].address[2] = temp.b[0];
+            BD[EP0IN].address[3] = temp.b[1];
+
+            BD[EP0IN].bytecount = 4;    // set EP0 IN byte count to 4
             BD[EP0IN].status = 0xC8;    // send packet as DATA1, set UOWN bit
+
+            TOF_VAL = 0;
+            TIMEOUT_FLAG = 0; // Reset timeout flag
+            OVERFLOW_COUNT = 0; // Reset overflow counter
+
             break;
         default:
             USB_error_flags |= 0x01;    // set Request Error Flag
