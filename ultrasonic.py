@@ -5,7 +5,7 @@ import pylab as plt
 from mpl_toolkits.mplot3d import Axes3D
 import math
 from random import randint
-
+import msvcrt as ms
 
 # Set parameters for servo commands
 MAX_VAL = 2**16 - 1 # 16 bit unsigned int
@@ -20,10 +20,10 @@ TILT_RANGE = 180
 
 # Set constant axis limits for plot
 PLOT_MIN = 0
-PLOT_MAX = 50
+PLOT_MAX = 200
 
 # Create list of distances for calibration (cm)
-dists = [10, 20, 30, 40, 50]
+dists = np.logspace(np.log10(30.0), np.log10(200.0), 15)
 
 def main():
 
@@ -35,10 +35,17 @@ def main():
     gusb = gimbalusb.gimbalusb()
 
     # Start servos at 0 position
-    # gusb.set_vals(PAN, TILT)
+    gusb.set_vals(PAN, TILT)
 
     # Run calibration routine
-    # speed = calibrate(dists)
+
+    run_cal = raw_input("Run calibration? (Y/N) ")
+    if run_cal == "Y":
+        speed = calibrate(gusb, dists)
+    else:
+        # Calibrated speed = 1.03283787E-03
+        speed = raw_input("Enter speed: ")
+        speed = float(speed)
 
     # Initialize data array
     arr = np.zeros([NUM_STEPS, NUM_STEPS, 3])
@@ -49,7 +56,7 @@ def main():
     ax = fig.add_subplot(111, projection='3d')
 
     #Set Axis Limits Here 
-    ax.set_xlim3d(-25, 25)
+    ax.set_xlim3d(PLOT_MIN - (PLOT_MAX-PLOT_MIN)/2, PLOT_MIN + (PLOT_MAX-PLOT_MIN)/2)
     ax.set_ylim3d(PLOT_MIN, PLOT_MAX)   
     ax.set_zlim3d(PLOT_MIN, PLOT_MAX)  
 
@@ -61,39 +68,43 @@ def main():
     ax.set_zlabel('Z')
 
     #Open Plot with Animation Enabled
-    # plt.ion()
-    # plt.show()
+    plt.ion()
+    plt.show()
 
     # Iterate each servo position
     for pan_ind in range(NUM_STEPS):
         for tilt_ind in range(NUM_STEPS):
 
             # Send servo position command
-            # gusb.set_vals(PAN, TILT)
+            gusb.set_vals(PAN, TILT)
+
+            t.sleep(0.5)
 
             # Send ping, measure TOF
-            tof = gusb.ping_ultrasonic()
+            [tof_count, overflow] = gusb.ping_ultrasonic()
 
-            print tof
+            if overflow == 20:
+                print "No object in range"
+            else:
+                tof = tof_count + overflow * 2**16
 
-            # Use calibrated speed to find dist to object
-            # dist = calc_dist(tof, speed)
-            dist = randint(5,50)
+                # Use calibrated speed to find dist to object
+                dist = calc_dist(tof, speed)
 
-            # Convert spherical coordinates to cartesian
-            [x, y, z] = sphr2cart(PAN, TILT, dist)
-            # print x, y, z
+                # Convert spherical coordinates to cartesian
+                [x, y, z] = sphr2cart(PAN, TILT, dist)
+                # print x, y, z
 
-            # Store cartestion positions
-            arr[pan_ind,tilt_ind] = [x, y, z]
+                # Store cartestion positions
+                arr[pan_ind,tilt_ind] = [x, y, z]
 
-            # ax.scatter(x, y, z)
-            # plt.draw()
+                ax.scatter(x, y, z)
+                plt.draw()
+
+            t.sleep(0.5)  
 
             # Increment tilt value
             TILT += INC_VAL
-
-            t.sleep(0.5)
 
         # Reset tilt value
         TILT = 0
@@ -103,19 +114,40 @@ def main():
 
     raw_input("Press any key to close plot and exit")
 
-def calibrate(dists):
+def calibrate(dev, dists):
 
     # Calibration routine to calculate distance to object
-    arr = np.zeros([len(dists),3])
+    arr = np.zeros([np.size(dists),3])
     i = 0
 
     for dist in dists:
-        res = raw_input("Place sensor %d cm from wall and press ENTER" %dist)
-        t = gusb.ping_ultrasonic()
-        arr[i,:] = [dist,t, dist/t]
+        res = raw_input("Place sensor %f cm from wall and press ENTER" %dist)
+
+        while 1:
+            print "Press any key when satisfied with reading"
+
+            if ms.kbhit():
+                break
+
+            [tof_count, overflow] = dev.ping_ultrasonic()
+            tof = tof_count + overflow * 2**16
+            print "TOF for %f cm is: %d" %(dist, tof)
+            t.sleep(0.5)
+
+        arr[i,:] = [dist,tof, dist/tof]
         i += 1
 
-    return np.average(arr[:,2])
+    avg_speed = np.average(arr[:,2])
+
+    print arr
+
+    print "Average Speed = %f cm/tick" %avg_speed
+    appoval = raw_input("Is calibration good? (Y/N)")
+
+    if appoval == "Y":
+        return avg_speed
+    else:
+        calibrate(dev, dists)
 
 def calc_dist(t,speed):
 
