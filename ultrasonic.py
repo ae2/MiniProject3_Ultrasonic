@@ -206,5 +206,5 @@ def ping_const():
         t.sleep(0.25)
 
 if __name__ == '__main__':
-    main()
-    # ping_const()
+    # main()
+    ping_const()
